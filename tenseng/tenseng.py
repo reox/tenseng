@@ -108,6 +108,10 @@ class Vector(object):
         # Set the value
         elem[args[-1]] = value
 
+    def dof(self):
+        # Return the number of Degrees of Freedom
+        return self.dim ** self.rank()
+
 
 # Kroneker Delta
 kron = Vector(Vector(1, 0, 0), Vector(0, 1, 0), Vector(0, 0, 1))
