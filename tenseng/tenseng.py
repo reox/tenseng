@@ -3,10 +3,9 @@ from itertools import product
 class Vector(object):
     """
     Vector Object for tensors of at least 1. rank
-    Scalar values (tensors 0. rank) can be used as scalars
+    Scalar values (tensors 0. rank) can be used as scalars (e.g. float/int)
 
-    TODO: we actually need to have 0. rank tensors...
-    TODO: we need to define the rank somehow?!
+    Tensors of other dimensions of 3 might cause problems ;)
     """
     def __init__(self, x = 0, y = 0, z = 0, dim = 3):
         self.dim = dim
