@@ -37,7 +37,7 @@ class Vector(object):
     def __add__(self, other):
         if self.rank() != other.rank():
             raise ValueError("not possible to add different ranks")
-        res = Vector(dim=self.dim)
+        res = null(self.rank())
         for i in range(self.dim):
             res[i] = self[i] + other[i]
 
@@ -46,7 +46,7 @@ class Vector(object):
     def __sub__(self, other):
         if self.rank() != other.rank():
             raise ValueError("not possible to subtract different ranks")
-        res = Vector(dim=self.dim)
+        res = null(self.rank())
         for i in range(self.dim):
             res[i] = self[i] - other[i]
 
@@ -90,18 +90,19 @@ class Vector(object):
 
     def rank(self):
         # return the rank of the tensorial object
-        r = 1
         if isinstance(self[0], (float, int)):
-            return r
-        return r + self[0].rank()
+            return 1
+        return self[0].rank() + 1
 
     def get(self, *args):
+        # A wrapper function for variable number of arguments
         elem = self
         for x in args:
             elem = elem[x]
         return elem
 
     def set(self, *args, value):
+        # A wrapper function for variable number of arguments
         # Find the parent element
         elem = self.get(*args[:-1])
         # Set the value
@@ -151,13 +152,13 @@ def identity(rank):
 
 
 
-# TODO need to define for higher orders as well
 def dyad(a, b):
     if a.rank() != b.rank():
         raise ValueError("Dyad is not defined for different ranks")
-    res = null(a.rank() + 1)
-    for i, j in product(range(3), repeat=2):
-        res[i][j] = a[i] * b[j]
+    nrank = a.rank() + 1
+    res = null(nrank)
+    for t in product(range(3), repeat=nrank):
+        res.set(*t, value=(a.get(*t[:nrank//2]) * b.get(*t[nrank//2:])))
     return res
 
 
@@ -177,23 +178,28 @@ def transpose(a):
 
 
 def sym(a):
+    # Symmetric tensor part
     # 1/2 * (a + aT)
     a = 0.5 * (a + transpose(a))
     return a
 
 
 def skew(a):
+    # Antisymmetric tensor part
     # 1/2 * (a - aT)
     a = 0.5 * (a - transpose(a))
     return a
 
 
 def vol(a):
-    pass
+    # Volumetric (spherical) part of 2nd rank tensor
+    return 1.0/3.0 * (trace(a) * identity(a.rank()))
 
 
 def dev(a):
-    pass
+    # Deviatoric part of 2nd rank tensor
+    return a - 1.0/3.0 * (trace(a) * identity(a.rank()))
+
 
 def det(a):
     # Calculate the determinant of a second rank tensor
