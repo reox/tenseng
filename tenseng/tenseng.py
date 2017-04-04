@@ -55,20 +55,50 @@ class Vector(object):
     def __mul__(self, other):
         if isinstance(other, (float, int)):
             # Multiply by scalar
+            # This is defined for all ranks in the same way.
+            res = null(self.rank())
             for i in range(self.dim):
-                self[i] *= other
-            return self
-
-        else:
-            # otherwise: scalarproduct / double / fourfold contraction
-            res = 0
-            for i in range(self.dim):
-                res += self[i] * other[i]
-
+                res[i] = self[i] * other
             return res
+        else:
+            # Now it gets tricky...
+            # We have several things here:
+            # a_i * b_i = c         Normal dot product for two vectors
+            # A_ik * B_kj = C_ij    dot product of two 2nd r. tensors
+            # A_ij * u_j = c_i      dot product of vector and 2nd r. tensor
+
+            if self.rank() == 1 and other.rank() == 1:
+                # This is the normal scalar product
+                res = 0
+                for i in range(self.dim):
+                    res += self[i] * other[i]
+                return res
+            elif self.rank() == 2 and other.rank() == 2:
+                # dot product for tensors
+                res = null(self.rank())
+                for i, j, k in product(range(self.dim), repeat=3):
+                    res[i][j] += self[i][k] * other[k][j]
+                return res
+            elif self.rank() == 2 and other.rank() == 1:
+                # u * A is not defined...
+                res = null(other.rank())
+                for i, j in product(range(self.dim), repeat=2):
+                    res[i] += self[i][j] * other[j]
+            else:
+                raise ValueError("dot product is not defined for this type of eq.")
 
     # Define the other side too (needed for multiplication with scalar)
-    __rmul__ = __mul__
+    def __rmul__(self, other):
+        # The only case where this is needed is to multiply scalars
+        if isinstance(other, (float, int)):
+            # Multiply by scalar
+            # This is defined for all ranks in the same way.
+            res = null(self.rank())
+            for i in range(self.dim):
+                res[i] = self[i] * other
+            return res
+        else:
+            raise ValueError("this type of multiplication is not defined")
 
     def __matmul__(self, other):
         # cross product for 1. rank tensors
@@ -111,6 +141,15 @@ class Vector(object):
     def dof(self):
         # Return the number of Degrees of Freedom
         return self.dim ** self.rank()
+
+    def as_list(self):
+        x = []
+        for i in range(self.dim):
+            if not isinstance(self[i], (int, float)):
+                x.append(self[i].as_list())
+            else:
+                x.append(self[i])
+        return x
 
 
 # Kroneker Delta
