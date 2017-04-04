@@ -1,5 +1,5 @@
 # tenseng
-yet another tensor library
+yet another tensor library for engineering purposes (e.g. mechanics).
 
 # why?
 because.
