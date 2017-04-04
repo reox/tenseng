@@ -201,6 +201,25 @@ def dyad(a, b):
     return res
 
 
+def double_contraction(a, b):
+    # In the double contraction, the rank of b must be less or equal than of a
+    if b.rank() > a.rank():
+        raise ValueError("The operation is not defined for lower rank tensor b")
+
+    # Basically it works like this: a_i..z : b_w..z = c_i..v
+    # Which means, the resulting vector has mute indices of a
+    # and b uses all indices as dummy (and those are the n last of a,
+    # when n is the rank of b)
+    d = a.rank() - b.rank()
+    res = null(d)
+    for t in product(range(3), repeat=a.rank()):
+        if d == 0:
+            res += a.get(*t) * b.get(*t[d:])
+        else:
+            res.set(*t[:d], value=(a.get(*t) * b.get(*t[d:])) + res.get(*t[:d]))
+    return res
+
+
 def trace(a):
     res = 0
     for i in range(3):
