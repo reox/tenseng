@@ -194,10 +194,25 @@ def identity(rank):
 def dyad(a, b):
     if a.rank() != b.rank():
         raise ValueError("Dyad is not defined for different ranks")
-    nrank = a.rank() + 1
+    nrank = a.rank() + b.rank()
     res = null(nrank)
     for t in product(range(3), repeat=nrank):
         res.set(*t, value=(a.get(*t[:nrank//2]) * b.get(*t[nrank//2:])))
+    return res
+
+
+def double_tensor_product(a, b):
+    """
+    Calculate the double tensorial product (X), defined by Curnier et al. (1994):
+    A (X) B = 0.5 * (A_ij B_jl + A_il B_jk) e_i (x) e_j (x) e_k (x) e_l
+    where (x) is the dyadic product and e_i are the basis vectors.
+    """
+    if a.rank() != 2 or b.rank() != 2:
+        raise ValueError("Two tensors of rank 2 has to be supplied")
+    res = null(4)  # Result is of order 4.
+    for i, j, k, l in product(range(3), repeat=4):
+        # TODO: What is with the basis? here, we skip it, because we usually have standard basis anyways
+        res.set(i, j, k, l, value=0.5 * (a[i][k] * b[j][l] + a[i][l] * b[j][k]))
     return res
 
 
@@ -235,6 +250,11 @@ def transpose(a):
     return res
 
 
+def is_sym(a):
+    """returns true if tensor is symmetric"""
+    return a == transpose(a)
+
+
 def sym(a):
     # Symmetric tensor part
     # 1/2 * (a + aT)
@@ -265,5 +285,20 @@ def det(a):
     for i, j, k in product(range(3), repeat=3):
         res += levi[i][j][k] * a[i][0] * a[j][1] * a[k][2]
     return res
+
+
+def to_matrix(c):
+    """return the Voigt notation of a 4th order tensor"""
+    if c.rank() != 4:
+        raise ValueError("Can give matrix notation only for 4th order tensor")
+
+    # Voigt Order
+    Z = [(0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1)]
+
+    for i, j, k, l in product(range(3), repeat=4):
+        # actually, we check here everthing twice but meh
+        assert c[i][j][k][l] == c[j][i][l][k]
+
+    return [[c[i][j][k][l] for k, l in Z] for i, j in Z]
 
 
