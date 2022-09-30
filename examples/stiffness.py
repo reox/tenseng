@@ -15,7 +15,7 @@ I = t.identity(2)
 
 
 def C_iso(l_0, mu_0, k, rho=1):
-    """Create an isotropic material and return the stiffness matrix"""
+    """Create an isotropic powerlaw material and return the stiffness matrix"""
     if not 0 <= rho <= 1:
         raise ValueError("Invalid Density")
     return np.asarray(t.to_matrix(l_0 * rho**k * t.dyad(I, I) + 2 * mu_0 * rho**k * t.double_tensor_product(I, I)))
@@ -23,11 +23,12 @@ def C_iso(l_0, mu_0, k, rho=1):
 
 def C_zysset(l_0, lp_0, mu_0, k, l, rho=1, M=np.eye(3)):
     """Create Zysset-Curnier model and return stiffness matrix"""
-    if np.trace(M) != 3:
+    if not np.isclose(np.trace(M), 3):
         raise ValueError("Invalid Fabric")
     if not 0 <= rho <= 1:
         raise ValueError("Invalid Density")
     eval, evec = np.linalg.eig(M)
+    print(evec)
     M = [t.dyad(t.Vector(*evec[i]), t.Vector(*evec[i])) for i in range(3)]
     res = t.null(4)
     for i in range(3):
@@ -52,9 +53,16 @@ def cubic_to_constants(C):
         raise ValueError("Invalid Stiffness Matrix")
 
     # Checks for isotropy / cubic-anisotropy
-    if not np.all(C * np.array(
+    # only the following elements must be set:
+    # x y y 0 0 0
+    # y x y 0 0 0
+    # y y x 0 0 0
+    # 0 0 0 z 0 0
+    # 0 0 0 0 z 0
+    # 0 0 0 0 0 z
+    if not np.all(np.isclose(C * np.array(
             [[0, 0, 0, 1, 1, 1], [0, 0, 0, 1, 1, 1], [0, 0, 0, 1, 1, 1], [1, 1, 1, 0, 1, 1], [1, 1, 1, 1, 0, 1],
-             [1, 1, 1, 1, 1, 0]]) == 0) or \
+             [1, 1, 1, 1, 1, 0]]), 0)) or \
             not np.isclose(C[0, 0], C[1, 1]) or \
             not np.isclose(C[1, 1], C[2, 2]) or \
             not np.isclose(C[3, 3], C[4, 4]) or \
@@ -64,7 +72,7 @@ def cubic_to_constants(C):
             not np.isclose(C[1, 0], C[2, 0]) or \
             not np.isclose(C[2, 1], C[2, 0]) or \
             not np.isclose(C[0, 1], C[1, 0]):
-        raise ValueError("Matrix does not fulfill symmetry")
+        raise ValueError("Matrix does not fulfill cubic-anisotropy symmetry")
 
     # Invert the stiffness tensor to elasticity tensor:
     E = np.linalg.inv(C)
@@ -111,3 +119,6 @@ print("Zysset-Curnier PMUBC based (10GPa, 0.3):")
 print(cubic_to_constants(C_zysset(6250.22, 3768.00, 3446.81, 2.01, 1.20)))
 print("Zysset-Curnier PMUBC based filtered:")
 print(cubic_to_constants(C_zysset(5060.06, 3353.04, 3116.88, 1.91, 1.10)))
+
+
+
