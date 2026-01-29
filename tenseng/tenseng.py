@@ -204,7 +204,7 @@ def dyad(a, b):
 def double_tensor_product(a, b):
     """
     Calculate the double tensorial product (X), defined by Curnier et al. (1994):
-    A (X) B = 0.5 * (A_ij B_jl + A_il B_jk) e_i (x) e_j (x) e_k (x) e_l
+    A (X) B = 0.5 * (A_ik B_jl + A_il B_jk) e_i (x) e_j (x) e_k (x) e_l
     where (x) is the dyadic product and e_i are the basis vectors.
     """
     if a.rank() != 2 or b.rank() != 2:
@@ -296,8 +296,11 @@ def to_matrix(c):
     Z = [(0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1)]
 
     for i, j, k, l in product(range(3), repeat=4):
-        # actually, we check here everthing twice but meh
-        assert c[i][j][k][l] == c[j][i][l][k]
+        # To write a tensor in Voigt notation, we need to make sure the minor symmetries are fulfilled.
+        if c[i][j][k][l] != c[j][i][k][l]:
+            raise ValueError(f"Minor Symmetry in first index pair not fulfilled at {(i, j, k, l)}")
+        if c[i][j][k][l] != c[i][j][l][k]:
+            raise ValueError(f"Minor Symmetry in second index pair not fulfilled at {(i, j, k, l)}")
 
     return [[c[i][j][k][l] for k, l in Z] for i, j in Z]
 
